@@ -5,10 +5,11 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 ## Input
 
 - **Sentinel-2 L2A Data** in `.SAFE` folders or `.zip` format.
-- Data should be organized by **tile name** and **year**.
-- Expected structure:
-  <pre> ``` DATA/ └── T32TPS/ ├── S2A_MSIL2A_2018...SAFE ├── S2B_MSIL2A_2018...SAFE └── ... ``` </pre>
-  
+- **Forest Mask** in `.shp` or raster format.
+  - Used to limit analysis to forested areas.
+  - Can be downloaded from the [WebGIS Portal](https://webgis.provincia.tn.it/) confine del bosco layer or from https://siatservices.provincia.tn.it/idt/vector/p_TN_3d0874bc-7b9e-4c95-b885-0f7c610b08fa.zip.
+
+
 
 
 
@@ -17,6 +18,9 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 - GeoTIFF files for:
 - **Change maps** (e.g., `CD_2018_2019.tif`)
 - **Post-processed change maps** (e.g., `CD_2018_2019_process.tif`)
+
+  
+  https://siatservices.provincia.tn.it/idt/vector/p_TN_3d0874bc-7b9e-4c95-b885-0f7c610b08fa.zip
 
 
 These outputs are saved in the specified output directory.
