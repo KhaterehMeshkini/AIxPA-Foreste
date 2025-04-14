@@ -2,105 +2,82 @@
 
 This project implements a pipeline for deforestation using Sentinel-2 Level-2A imagery. It processes raw .SAFE or .zip Sentinel-2 inputs, extracts NDVI and BSI indices, interpolates them to a monthly time series, applies BFAST (Breaks For Additive Season and Trend), and outputs change detection and confidence maps.
 
-🚀 Overview
-The main script performs the following steps:
+## 📂 Input
 
-Reads and processes Sentinel-2 Level-2A data for a specified tile and years.
-
-Computes NDVI and BSI indices for each image.
-
-Masks invalid pixels using external masks.
-
-Interpolates the indices to obtain a complete monthly time series.
-
-Fuses NDVI and BSI features for each pixel.
-
-Applies BFAST to detect changes.
-
-Post-processes the change maps to remove noise and fill holes.
-
-Saves final shapefiles representing change year and probability.
-
-📥 Input
-Sentinel-2 data in .SAFE folder format or .zip archives.
-
-External mask files (in .npy format) for masking invalid pixels.
-
-Data should be organized by tile in the following structure:
-
-markdown
-Copy
-Edit
+- **Sentinel-2 L2A Data** in `.SAFE` folders or `.zip` format.
+- Data should be organized by **tile name** and **year**.
+- Expected structure:
 DATA/
   └── T32TPS/
       ├── S2A_MSIL2A_2018...SAFE
       ├── S2B_MSIL2A_2018...SAFE
       └── ...
-📤 Output
-Shapefiles will be generated and saved in the specified output directory:
 
-CD_2018_2019.shp – Raw BFAST change map with year of detected change.
 
-prob_2018_2019.shp – Raw confidence map (BFAST magnitude).
+## 📤 Output
 
-CD_2018_2019_process.shp – Processed change map with noise removed.
+- GeoTIFF files for:
+- **Change maps** (e.g., `CD_2018_2019.tif`)
+- **Change confidence maps** (e.g., `prob_2018_2019.tif`)
+- **Post-processed change maps** (e.g., `CD_2018_2019_process.tif`)
+- **Post-processed probability maps** (e.g., `prob_2018_2019_process.tif`)
 
-prob_2018_2019_process.shp – Processed confidence map.
+These outputs are saved in the specified output directory.
 
-All outputs are GeoTIFF-compatible files, georeferenced with metadata extracted from the original Sentinel-2 scenes.
+---
 
-⚙️ Parameters
-The following parameters are defined in the main script:
+## 🛠️ Parameters
 
-python
-Copy
-Edit
-sensor = 'S2'  # Sentinel-2 sensor
-tilename = 'T32TPS'  # Sentinel-2 tile ID
-years = ['2018', '2019']  # Years to process
-maindir = '/home/username/'  # Main working directory
-datapath = '/path/to/DATA/'  # Input directory containing Sentinel-2 .SAFE or .zip data
-outpath = '/path/to/OUTPUT/'  # Output directory for saving results
-Update the paths to match your local directory structure.
+The following parameters are required to run the script:
 
-🧩 Dependencies
-Make sure the following Python libraries are installed:
+| Parameter  | Description                                    | Example                            |
+|------------|------------------------------------------------|------------------------------------|
+| `sensor`   | Satellite sensor type (currently only `S2`)    | `'S2'`                              |
+| `tilename` | Sentinel-2 tile name                           | `'T32TPS'`                          |
+| `years`    | List of years for time series analysis         | `['2018', '2019']`                 |
+| `maindir`  | Main directory path for temporary and input data | `'/home/user/'`                  |
+| `datapath` | Path to the directory containing `.SAFE` data  | `'/path/to/DATA/'`                 |
+| `outpath`  | Directory where output files will be saved     | `'/path/to/OUTPUT/'`               |
 
-numpy
+---
 
-joblib
+## ⚙️ How It Works
 
-datetime
+1. **Read Sentinel-2 data** using tile-specific metadata.
+2. **Compute NDVI and BSI indices** from RED, NIR, and SWIR1 bands.
+3. **Apply cloud/shadow masks** from precomputed binary mask files (`MASK.npy`).
+4. **Interpolate data** to generate a complete 24-month time series (12 months/year).
+5. **Fuse features** and reshape data into pixel-wise time series.
+6. **Run BFAST** to detect change points across time.
+7. **Post-process** change maps to remove noise and fill gaps.
+8. **Export results** as GeoTIFF raster files.
 
-shutil
+---
 
-os, sys, time
+## 📦 Requirements
 
-Custom utility scripts in utils/:
+- Python 3.7+
+- Required Python libraries (install via `pip` or `conda`):
+- `numpy`
+- `joblib`
+- `datetime`
+- `os`, `shutil`, `json`
+- Custom `utils` module (must be included in the repository)
 
-filemanager.py
+---
 
-S2L2A.py
+## ▶️ Running the Script
 
-utils.py
+You can run the main script by configuring the parameters and calling the function:
 
-post_processing.py
+```python
+sensor = 'S2'
+tilename = 'T32TPS'
+years = ['2018','2019']
+maindir = '/home/user/'
+datapath = '/home/user/Platform/DATA/'
+outpath = '/home/user/Platform/OUTPUT/'
 
-🛠️ Usage
-Run the pipeline directly from the terminal or inside your Python environment:
+deforestation(sensor, tilename, years, maindir, datapath, outpath)
 
-bash
-Copy
-Edit
-python main.py
-Make sure all required utils/ scripts are accessible in the same directory or Python path.
 
-📝 Notes
-This pipeline assumes pre-existing .npy mask files for each image.
-
-The script is parallelized for performance using all available CPU cores.
-
-BFAST breaks are reported in monthly resolution and later converted to corresponding year.
-
-📬 Contact
-For issues, questions, or suggestions, feel free to open an issue or contact the project maintainer.
