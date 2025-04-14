@@ -74,7 +74,7 @@ sensor = 'S2'
 tilename = 'T32TPS'
 years = ['2018','2019']
 maindir = '/home/user/'
-maskpath = '/home/user/Platform/Bosco'
+maskpath = '/home/user/Platform/Bosco/'
 datapath = '/home/user/Platform/DATA/'
 outpath = '/home/user/Platform/OUTPUT/'
 
