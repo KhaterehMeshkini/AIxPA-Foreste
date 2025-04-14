@@ -1,6 +1,6 @@
 # AIxPA-Foreste
 
-This project implements a pipeline for deforestation using Sentinel-2 Level-2A imagery. It processes raw .SAFE or .zip Sentinel-2 inputs, extracts NDVI and BSI indices, interpolates them to a monthly time series, applies BFAST (Breaks For Additive Season and Trend), and outputs change detection and confidence maps.
+This project implements a pipeline for deforestation using Sentinel-2 Level-2A imagery. It processes raw .SAFE or .zip Sentinel-2 inputs, extracts NDVI and BSI indices, interpolates them to a monthly time series, applies BFAST (Breaks For Additive Season and Trend), and outputs change detection and probability maps.
 
 ## Input
 
@@ -19,9 +19,8 @@ DATA/
 
 - GeoTIFF files for:
 - **Change maps** (e.g., `CD_2018_2019.tif`)
-- **Change confidence maps** (e.g., `prob_2018_2019.tif`)
 - **Post-processed change maps** (e.g., `CD_2018_2019_process.tif`)
-- **Post-processed probability maps** (e.g., `prob_2018_2019_process.tif`)
+
 
 These outputs are saved in the specified output directory.
 
@@ -37,6 +36,7 @@ The following parameters are required to run the script:
 | `tilename` | Sentinel-2 tile name                           | `'T32TPS'`                          |
 | `years`    | List of years for time series analysis         | `['2018', '2019']`                 |
 | `maindir`  | Main directory path for temporary and input data | `'/home/user/'`                  |
+| `maskpath`  | Path for forest mask                          | `'/home/user/'`                  |
 | `datapath` | Path to the directory containing `.SAFE` data  | `'/path/to/DATA/'`                 |
 | `outpath`  | Directory where output files will be saved     | `'/path/to/OUTPUT/'`               |
 
@@ -50,7 +50,7 @@ The following parameters are required to run the script:
 4. **Interpolate data** to generate a complete 24-month time series (12 months/year).
 5. **Fuse features** and reshape data into pixel-wise time series.
 6. **Run BFAST** to detect change points across time.
-7. **Post-process** change maps to remove noise and fill gaps.
+7. **Post-process** change maps to remove isolated pixels and fill gaps.
 8. **Export results** as GeoTIFF raster files.
 
 ---
@@ -76,6 +76,7 @@ sensor = 'S2'
 tilename = 'T32TPS'
 years = ['2018','2019']
 maindir = '/home/user/'
+maskpath = '/home/user/Platform/Mask'
 datapath = '/home/user/Platform/DATA/'
 outpath = '/home/user/Platform/OUTPUT/'
 
