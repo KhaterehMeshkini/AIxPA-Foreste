@@ -34,7 +34,7 @@ The following parameters are required to run the script:
 | `tilename` | Sentinel-2 tile name                           | `'T32TPS'`                          |
 | `years`    | List of years for time series analysis         | `['2018', '2019']`                 |
 | `maindir`  | Main directory path for temporary and input data | `'/home/user/'`                  |
-| `maskpath`  | Path for forest mask                          | `'/home/user/'`                  |
+| `boscopath`  | Path for forest mask                          | `'/home/user/'`                  |
 | `datapath` | Path to the directory containing `.SAFE` data  | `'/path/to/DATA/'`                 |
 | `outpath`  | Directory where output files will be saved     | `'/path/to/OUTPUT/'`               |
 
@@ -74,10 +74,10 @@ sensor = 'S2'
 tilename = 'T32TPS'
 years = ['2018','2019']
 maindir = '/home/user/'
-maskpath = '/home/user/Platform/Mask'
+maskpath = '/home/user/Platform/Bosco'
 datapath = '/home/user/Platform/DATA/'
 outpath = '/home/user/Platform/OUTPUT/'
 
-deforestation(sensor, tilename, years, maindir, datapath, outpath)
+deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath)
 
 
