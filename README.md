@@ -7,6 +7,7 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 - **Sentinel-2 L2A Data** in `.SAFE` folders or `.zip` format.
 - Data should be organized by **tile name** and **year**.
 - Expected structure:
+  
 DATA/
   └── T32TPS/
       ├── S2A_MSIL2A_2018...SAFE
