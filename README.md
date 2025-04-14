@@ -19,9 +19,6 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 - **Change maps** (e.g., `CD_2018_2019.tif`)
 - **Post-processed change maps** (e.g., `CD_2018_2019_process.tif`)
 
-  
-  https://siatservices.provincia.tn.it/idt/vector/p_TN_3d0874bc-7b9e-4c95-b885-0f7c610b08fa.zip
-
 
 These outputs are saved in the specified output directory.
 
