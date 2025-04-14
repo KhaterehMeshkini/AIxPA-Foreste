@@ -2,7 +2,7 @@
 
 This project implements a pipeline for deforestation using Sentinel-2 Level-2A imagery. It processes raw .SAFE or .zip Sentinel-2 inputs, extracts NDVI and BSI indices, interpolates them to a monthly time series, applies BFAST (Breaks For Additive Season and Trend), and outputs change detection and confidence maps.
 
-## 📂 Input
+## Input
 
 - **Sentinel-2 L2A Data** in `.SAFE` folders or `.zip` format.
 - Data should be organized by **tile name** and **year**.
@@ -14,7 +14,7 @@ DATA/
       └── ...
 
 
-## 📤 Output
+## Output
 
 - GeoTIFF files for:
 - **Change maps** (e.g., `CD_2018_2019.tif`)
@@ -26,7 +26,7 @@ These outputs are saved in the specified output directory.
 
 ---
 
-## 🛠️ Parameters
+## Parameters
 
 The following parameters are required to run the script:
 
@@ -41,7 +41,7 @@ The following parameters are required to run the script:
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 1. **Read Sentinel-2 data** using tile-specific metadata.
 2. **Compute NDVI and BSI indices** from RED, NIR, and SWIR1 bands.
@@ -54,7 +54,7 @@ The following parameters are required to run the script:
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 - Python 3.7+
 - Required Python libraries (install via `pip` or `conda`):
@@ -66,7 +66,7 @@ The following parameters are required to run the script:
 
 ---
 
-## ▶️ Running the Script
+## Running the Script
 
 You can run the main script by configuring the parameters and calling the function:
 
