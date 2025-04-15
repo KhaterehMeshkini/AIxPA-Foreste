@@ -140,7 +140,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     
    
     # Vectorized approach for interpolation
-    print(f'Generating monthly samples:')
+    print('Generating monthly samples:')
     interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
 
 
@@ -150,7 +150,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
    
     
     # Run BFAST
-    print(f'Running break point detector:')
+    print('Running break point detector:')
     startyear = int(years[0])
     endyear = int(years[-1]) 
     freq = 12 #monthly data
