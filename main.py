@@ -209,10 +209,10 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
 sensor = 'S2'
 tilename = 'T32TPS'
 years = ['2018','2019']
-maindir = '/media/mkhatereh/Elements/RSDE/S2_DL/AIxPA_test/'
-boscopath = '/home/mkhatereh/AIxPA/Code/Platfrom_v1/Bosco/'
-datapath = '/home/mkhatereh/AIxPA/Code/Platfrom_v1/DATA/'
-outpath = '/media/mkhatereh/Elements/RSDE/S2_DL/AIxPA_test/'
+maindir = '/home/user/'
+boscopath = '/home/user/Bosco/'
+datapath = '/home/user/DATA/'
+outpath = '/home/user/OUTPUT/'
 temppath = fm.joinpath(maindir, 'numpy')
 
 deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath)
