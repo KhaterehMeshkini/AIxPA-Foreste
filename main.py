@@ -4,7 +4,7 @@ import sys, os, time, shutil, json
 from os.path import abspath
 import utils.filemanager as fm
 from utils.S2L2A import L2Atile, getTileList
-from utils.utils import _ndi
+from utils.utils import _ndi, _bsi
 from datetime import datetime
 from joblib import Parallel, cpu_count, delayed
 from utils.utils import run_bfast_parallel, get_month_numbers, interpolate_for_year, interpolate_time_series, fuse_features, parallel_interpolate
@@ -80,6 +80,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
                 print(f'.. {idx+1}/{totimg}      ', end='\r')   
                         
                 # Compute NDVI and BSI indices
+                b1 = img.feature('BLUE', dtype=np.float16)
                 b3 = img.feature('RED', dtype=np.float16)
                 b4 = img.feature('nir', dtype=np.float16)
                 b5 = img.feature('SWIR1', dtype=np.float16)
@@ -87,7 +88,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
                 
     
                 NDVI = _ndi(b4, b3)
-                BSI = _ndi(b4, b5)
+                BSI = _ndi(b1, b3, b4, b5)
 
                 fuse_feature = fuse_features(NDVI,BSI)
     
