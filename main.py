@@ -7,7 +7,7 @@ from utils.S2L2A import L2Atile, getTileList
 from utils.utils import _ndi
 from datetime import datetime
 from joblib import Parallel, cpu_count, delayed
-from utils.utils import run_bfast_parallel, get_month_numbers, interpolate_for_year, interpolate_time_series, fuse_features, process_pixel
+from utils.utils import run_bfast_parallel, get_month_numbers, interpolate_for_year, interpolate_time_series, fuse_features, parallel_interpolate
 import utils.post_processing as pp
 import utils.custom_bfast as bfast
 
@@ -141,7 +141,8 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
    
     # Vectorized approach for interpolation
     print('Generating monthly samples:')
-    interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
+    #interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
+    interpolated_feature = parallel_interpolate(feature_data, dates_2018, dates_2019)
 
 
     # Reshape for BFAST
