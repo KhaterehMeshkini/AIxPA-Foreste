@@ -115,7 +115,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
                 
         # Flush memory-mapped arrays to disk
         feature_all.flush()
-        #feature_BSI_all.flush()
+        
 
     
     #read the dates
