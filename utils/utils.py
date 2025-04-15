@@ -22,6 +22,12 @@ def _ndi(b1,b2):
     
     return index 
 
+def _bsi(blue, red, nir, swir):
+
+    numerator = (swir + red) - (nir + blue)
+    denominator = (swir + red) + (nir + blue) + 1e-6  # Avoid divide-by-zero
+    return numerator / denominator 
+
 # Map dates to month numbers
 def get_month_numbers(dates):
     return np.array([d.month for d in dates])
