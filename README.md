@@ -58,6 +58,7 @@ The following parameters are required to run the script:
 - Python 3.7+
 - Required Python libraries (install via `pip` or `conda`):
 - `numpy`
+- `gdal`
 - `joblib`
 - `datetime`
 - `os`, `shutil`, `json`
