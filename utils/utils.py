@@ -5,6 +5,7 @@ from joblib import Parallel, cpu_count, delayed
 #import bfast
 import filemanager as fm
 import custom_bfast as bfast
+from tqdm import tqdm
 
 
 ###Some Functions
@@ -49,13 +50,19 @@ def fuse_features(ndvi, bsi):
     return np.sqrt((ndvi ** 2 + bsi ** 2) / 2).astype(np.float16)
     
     
-# Fusion parallel processing    
-def process_pixel(i, j):
-    ndvi_pixel = ndvi_data[i, j, :]
-    bsi_pixel = bsi_data[i, j, :]
-    interpolated_ndvi = interpolate_time_series(ndvi_pixel, dates_2018, dates_2019)
-    interpolated_bsi = interpolate_time_series(bsi_pixel, dates_2018, dates_2019)
-    return i, j, fuse_features(interpolated_ndvi, interpolated_bsi)
+
+# Interpolate parallel processing 
+def parallel_interpolate(feature_data, dates_2018, dates_2019, n_jobs=-1):
+    height, width, _ = feature_data.shape
+    flat_pixels = feature_data.reshape(-1, feature_data.shape[2])
+
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(interpolate_time_series)(px, dates_2018, dates_2019)
+        for px in tqdm(flat_pixels, desc="Interpolating")
+    )
+
+    interpolated = np.stack(results, axis=0).reshape(height, width, 24).astype(np.float16)
+    return interpolated 
     
 
 # Parallel BFAST processing
