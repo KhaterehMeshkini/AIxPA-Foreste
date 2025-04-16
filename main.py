@@ -10,6 +10,7 @@ from joblib import Parallel, cpu_count, delayed
 from utils.utils import run_bfast_parallel, get_month_numbers, interpolate_for_year, interpolate_time_series, fuse_features, parallel_interpolate
 import utils.post_processing as pp
 import utils.custom_bfast as bfast
+from tqdm import tqdm
 
 
 def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath):
@@ -131,28 +132,38 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     feature_data = feature_all
     
     #filter by bosco map
-    feature_data = np.where(bosco_mask[:,:,np.newaxis] == 0, np.nan, feature_data)
+    feature_data = np.where(bosco_mask[:,:,np.newaxis] == 0, np.nan, feature_data).astype(np.float16)
+    height, width, time_steps = feature_data.shape
     
-    
-    height, width, _ = feature_data.shape
     interpolated_feature = np.zeros((height, width, 24), dtype=np.float16)
+
+    # Flatten image and get valid pixel indices (not NaN across all time steps)
+    flat_pixels = feature_data.reshape(-1, time_steps)
+    valid_mask = ~np.isnan(flat_pixels).all(axis=1)
+    valid_pixels = flat_pixels[valid_mask]
+    
+    print(f"Total pixels: {flat_pixels.shape[0]}, Valid pixels: {valid_pixels.shape[0]}")
     
 
-    
-   
     # Vectorized approach for interpolation
     print('Generating monthly samples:')
+        interpolated_valid = Parallel(n_jobs=-1)(
+        delayed(interpolate_time_series)(px, dates_2018, dates_2019)
+        for px in tqdm(valid_pixels, desc="Interpolating")
+    )
+    interpolated_valid = np.stack(interpolated_valid).astype(np.float16)
     #interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
-    interpolated_feature = parallel_interpolate(feature_data, dates_2018, dates_2019)
+    #interpolated_feature = parallel_interpolate(feature_data, dates_2018, dates_2019)
 
 
     # Reshape for BFAST
-    totpixels = height * width
-    fused_reshaped = interpolated_feature.reshape((totpixels, 24))
+    #totpixels = height * width
+    #fused_reshaped = interpolated_feature.reshape((totpixels, 24))
    
     
     # Run BFAST
     print('Running break point detector:')
+    tot_valid = interpolated_valid.shape[0]
     startyear = int(years[0])
     endyear = int(years[-1]) 
     freq = 12 #monthly data
@@ -161,7 +172,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     
     
     with Parallel(n_jobs=-1) as parallel:
-        dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(fused_reshaped.shape[1], 1)
+        dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(interpolated_valid.shape[1], 1)
         breaks, confidence = run_bfast_parallel(parallel, fused_reshaped, dates, freq)
           
     # Process results
@@ -175,10 +186,23 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     changemaps_year = np.zeros_like(changemaps, dtype = int)
     for i, year in enumerate(years_np):
         changemaps_year[changemaps == i] = year
+
+
+    # Initialize full-size output arrays with a fill value (e.g., 0 or np.nan)
+    full_changemap = np.full((height * width,), 0, dtype=int)
+    full_confidence = np.full((height * width,), 0, dtype=np.float16)
+    
+    # Put results back into full-size arrays
+    full_changemap[valid_mask] = changemaps_year
+    full_confidence[valid_mask] = confidence
+    
+    # Reshape to 2D maps
+    changemaps_final = full_changemap.reshape(height, width)
+    confidence_final = full_confidence.reshape(height, width) 
     
     
     # Remove isolated pixels
-    updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_year, accuracymaps)
+    updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_final, confidence_final)
     
     # Fill gaps and update probabilities
     final_change_array, final_probability_array = pp.fill_small_holes_and_update_probabilities(updated_change_array, updated_probability_array) 
