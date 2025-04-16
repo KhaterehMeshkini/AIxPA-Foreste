@@ -173,7 +173,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     
     with Parallel(n_jobs=-1) as parallel:
         dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(interpolated_valid.shape[1], 1)
-        breaks, confidence = run_bfast_parallel(parallel, fused_reshaped, dates, freq)
+        breaks, confidence = run_bfast_parallel(parallel, interpolated_valid, dates, freq)
           
     # Process results
     changemaps = breaks // freq
