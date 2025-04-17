@@ -15,12 +15,15 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 
 ## Output
 
-- GeoTIFF files for:
-- **Change maps** (e.g., `CD_2018_2019.tif`)
-- **Post-processed change maps** (e.g., `CD_2018_2019_process.tif`)
+GeoTIFF file for:
+- **Change map** (e.g., `CD_2018_2019.tif`)
+ 
+The change map has two bands: 
+1) year of change (2018 or 2019)
+2) probability of change ( between 0 to 1)
 
 
-These outputs are saved in the specified output directory.
+The output is saved in the specified output directory.
 
 ---
 
