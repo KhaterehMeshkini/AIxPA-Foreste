@@ -214,16 +214,8 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     
     
     # Save output
-    output_filename = fm.joinpath(outpath, "CD_2018_2019")
-    
-    fm.writeGeoTIFFD(output_filename, np.stack([changemaps_year, accuracymaps], axis=-1), geotransform, projection)
-    
-    
-                     
-    output_filename_process = fm.joinpath(outpath,"CD_2018_2019_process")
-
-
-    
+                
+    output_filename_process = fm.joinpath(outpath,"CD_2018_2019")
     fm.writeGeoTIFFD(output_filename_process, np.stack([final_change_array, final_probability_array], axis=-1), geotransform, projection) 
                    
     
