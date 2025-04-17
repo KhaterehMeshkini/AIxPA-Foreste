@@ -18,7 +18,7 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 GeoTIFF file for:
 - **Change map** (e.g., `CD_2018_2019.tif`)
  
-The change map has two bands: 
+The change map has two bands for each pixel: 
 1) year of change (2018 or 2019)
 2) probability of change ( between 0 to 1)
 
