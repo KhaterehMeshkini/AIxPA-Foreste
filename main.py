@@ -236,7 +236,8 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     print('Start post processing:')
     # Remove isolated pixels
     updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_year, accuracymaps)
-
+    
+    print('Fill gaps and update probabilities:')
     # Fill gaps and update probabilities
     final_change_array, final_probability_array = pp.fill_small_holes_and_update_probabilities(updated_change_array, updated_probability_array) 
 
@@ -244,22 +245,9 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     final_probability_array = final_probability_array.astype(float)
     final_change_array[final_change_array ==0 ] = np.nan
     final_probability_array[final_probability_array ==0 ] = np.nan    
-          
-    
-    # Remove isolated pixels
-    updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_year, accuracymaps)
-    
-    # Fill gaps and update probabilities
-    final_change_array, final_probability_array = pp.fill_small_holes_and_update_probabilities(updated_change_array, updated_probability_array) 
-    
-    final_change_array = final_change_array.astype(float)
-    final_probability_array = final_probability_array.astype(float)
-    final_change_array[final_change_array ==0 ] = np.nan
-    final_probability_array[final_probability_array ==0 ] = np.nan
-    
     
     # Save output 
-    output_filename_process = fm.joinpath(outpath,"CD_2018_2019")
+    output_filename_process = fm.joinpath(outpath,"CD_2018_2019.tif")
     
     fm.writeGeoTIFFD(output_filename_process, np.stack([final_change_array, final_probability_array], axis=-1), geotransform, projection) 
 
