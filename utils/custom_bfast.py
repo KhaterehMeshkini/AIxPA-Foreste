@@ -585,19 +585,26 @@ def BIC_fun(n: int, k: int, SSR: np.ndarray, breakpoints: np.ndarray):
 
     NOTE: This version is modified to work with batches of pixels.
     """
+    
     bic = np.full(SSR.shape, -np.inf)
     to_process = np.logical_not(np.isclose(SSR, 0.0))
-    df = (k + 1) * (
-        np.sum(
-            ~np.isnan(breakpoints[to_process].reshape(-1, to_process.shape[-1])), axis=0
-        )
-        + 1
-    )
+    if not np.any(to_process):  # Nothing to process
+        return bic
+        
+    # Safe reshape
+    reshaped_breaks = breakpoints[to_process]
+    if reshaped_breaks.ndim == 1:
+        reshaped_breaks = reshaped_breaks.reshape(-1, 1)  
+        
+        
+    df = (k + 1) * (np.sum(~np.isnan(reshaped_breaks), axis=1) + 1)
+
     # log-likelihood
     logL = n * (np.log(SSR[to_process]) + 1 - np.log(n) + np.log(2 * np.pi))
-    bic[to_process] = df * np.log(n) + logL
-    return bic
 
+    bic[to_process] = df * np.log(n) + logL     
+
+    return bic
 
 def breakpoints_for_m(
     n: int,
