@@ -126,7 +126,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     # Separate dates based on the year
     dates_2018 = [date for date in all_dates_datetime if date.year == 2018]
     dates_2019 = [date for date in all_dates_datetime if date.year == 2019]
-
+    
     
     #feature data
     feature_data = feature_all
@@ -135,46 +135,81 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     feature_data = np.where(bosco_mask[:,:,np.newaxis] == 0, np.nan, feature_data).astype(np.float16)
     height, width, time_steps = feature_data.shape
     
-    interpolated_feature = np.zeros((height, width, 24), dtype=np.float16)
-
     # Flatten image and get valid pixel indices (not NaN across all time steps)
     flat_pixels = feature_data.reshape(-1, time_steps)
     valid_mask = ~np.isnan(flat_pixels).all(axis=1)
     valid_pixels = flat_pixels[valid_mask]
     
     print(f"Total pixels: {flat_pixels.shape[0]}, Valid pixels: {valid_pixels.shape[0]}")
+
     
 
+   
     # Vectorized approach for interpolation
     print('Generating monthly samples:')
-        interpolated_valid = Parallel(n_jobs=-1)(
+    #interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
+    interpolated_valid = Parallel(n_jobs=6)(
         delayed(interpolate_time_series)(px, dates_2018, dates_2019)
         for px in tqdm(valid_pixels, desc="Interpolating")
     )
     interpolated_valid = np.stack(interpolated_valid).astype(np.float16)
-    #interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
     #interpolated_feature = parallel_interpolate(feature_data, dates_2018, dates_2019)
+
+    # Create full 3D array with NaNs
+    new_time_steps = interpolated_valid.shape[1]
+    interpolated_full = np.zeros((height * width, 24), dtype=np.float16) 
+
+    # Fill valid positions
+    interpolated_full[valid_mask] = interpolated_valid
+
+    # Reshape back to 3D image
+    interpolated_feature = interpolated_full.reshape(height, width, new_time_steps)
+
+    print(f"Interpolated feature shape: {interpolated_feature.shape}")
+    
 
 
     # Reshape for BFAST
-    #totpixels = height * width
-    #fused_reshaped = interpolated_feature.reshape((totpixels, 24))
+    totpixels = height * width
+    fused_reshaped = interpolated_feature.reshape((totpixels, 24))
    
     
     # Run BFAST
     print('Running break point detector:')
-    tot_valid = interpolated_valid.shape[0]
+
     startyear = int(years[0])
     endyear = int(years[-1]) 
     freq = 12 #monthly data
     nyear = endyear - startyear 
     years_np = np.arange(startyear, endyear+1)
     
+    print(f"Input array shape : {fused_reshaped.shape}")
     
-    with Parallel(n_jobs=-1) as parallel:
-        dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(interpolated_valid.shape[1], 1)
-        breaks, confidence = run_bfast_parallel(parallel, interpolated_valid, dates, freq)
-          
+    batch_size = int(totpixels/10)  # Try 1M, 2M, etc.
+    num_batches = int(np.ceil(fused_reshaped.shape[0] / batch_size))
+    
+    all_breaks = []
+    all_confidence = []
+    dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(fused_reshaped.shape[1], 1)
+
+    for i in range(num_batches):
+        start = i * batch_size
+        end = min((i + 1) * batch_size, fused_reshaped.shape[0])
+        print(f"Processing batch {i+1}/{num_batches} ({end - start} pixels)")
+        
+        batch_data = fused_reshaped[start:end]
+    
+        with Parallel(n_jobs=-1) as parallel:
+            
+            breaks, confidence = run_bfast_parallel(parallel, batch_data, dates, freq)
+            
+        all_breaks.append(breaks)
+        all_confidence.append(confidence)    
+        
+    # Combine all results
+    breaks = np.concatenate(all_breaks, axis=0)
+    confidence = np.concatenate(all_confidence, axis=0) 
+                 
     # Process results
     changemaps = breaks // freq
     accuracymaps = confidence
@@ -187,22 +222,31 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     for i, year in enumerate(years_np):
         changemaps_year[changemaps == i] = year
 
+        # Process results
+    changemaps = breaks // freq
+    accuracymaps = confidence
+    changemaps = changemaps.reshape(height, width)
+    accuracymaps = accuracymaps.reshape(height, width)
+    
+   
+    changemaps_year = np.zeros_like(changemaps, dtype = int)
+    for i, year in enumerate(years_np):
+        changemaps_year[changemaps == i] = year
 
-    # Initialize full-size output arrays with a fill value (e.g., 0 or np.nan)
-    full_changemap = np.full((height * width,), 0, dtype=int)
-    full_confidence = np.full((height * width,), 0, dtype=np.float16)
-    
-    # Put results back into full-size arrays
-    full_changemap[valid_mask] = changemaps_year
-    full_confidence[valid_mask] = confidence
-    
-    # Reshape to 2D maps
-    changemaps_final = full_changemap.reshape(height, width)
-    confidence_final = full_confidence.reshape(height, width) 
-    
+    # Remove isolated pixels
+    updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_year, accuracymaps)
+
+    # Fill gaps and update probabilities
+    final_change_array, final_probability_array = pp.fill_small_holes_and_update_probabilities(updated_change_array, updated_probability_array) 
+
+    final_change_array = final_change_array.astype(float)
+    final_probability_array = final_probability_array.astype(float)
+    final_change_array[final_change_array ==0 ] = np.nan
+    final_probability_array[final_probability_array ==0 ] = np.nan    
+          
     
     # Remove isolated pixels
-    updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_final, confidence_final)
+    updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_year, accuracymaps)
     
     # Fill gaps and update probabilities
     final_change_array, final_probability_array = pp.fill_small_holes_and_update_probabilities(updated_change_array, updated_probability_array) 
@@ -213,13 +257,11 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     final_probability_array[final_probability_array ==0 ] = np.nan
     
     
-    # Save output
-                
+    # Save output 
     output_filename_process = fm.joinpath(outpath,"CD_2018_2019")
+    
     fm.writeGeoTIFFD(output_filename_process, np.stack([final_change_array, final_probability_array], axis=-1), geotransform, projection) 
-                   
-    
-    
+
     print("Processing complete!")    
          
 
