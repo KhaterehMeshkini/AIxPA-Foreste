@@ -232,7 +232,8 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     changemaps_year = np.zeros_like(changemaps, dtype = int)
     for i, year in enumerate(years_np):
         changemaps_year[changemaps == i] = year
-
+        
+    print('Start post processing:')
     # Remove isolated pixels
     updated_change_array, updated_probability_array = pp.remove_isolated_pixels(changemaps_year, accuracymaps)
 
