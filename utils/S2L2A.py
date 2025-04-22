@@ -4,7 +4,7 @@ import os, zipfile, time
 import numpy as np
 import matplotlib.pyplot as plt
 import utils.filemanager as fm
-from s2image import S2img
+from utils.s2image import S2img
 
 ##################################################################################################
 # Sentinel-2 L2A Image 
