@@ -59,12 +59,12 @@ The following parameters are required to run the script:
 ## Requirements
 
 - Python 3.10+
-- Required Python libraries (install via `pip` or `conda`):
-- `numpy`
-- `gdal`
-- `joblib`
-- `datetime`
-- `os`, `shutil`, `json`
+- Required Python libraries install via `conda`:
+- `scikit-image scikit-learn pandas`
+- `gdal=3.10`
+- Required Python libraries install via `pip`:
+- `requirements.txt`
+
 - Custom `utils` module (must be included in the repository)
 
 ---
