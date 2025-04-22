@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors, figure
 import datetime
 from skimage import transform
-from fiona.crs import from_epsg
 import geopandas as gpd
 from shapely.geometry import Polygon
 from osgeo import gdal, ogr, osr
