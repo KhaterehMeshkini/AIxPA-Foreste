@@ -58,7 +58,7 @@ The following parameters are required to run the script:
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.10+
 - Required Python libraries (install via `pip` or `conda`):
 - `numpy`
 - `gdal`
