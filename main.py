@@ -142,31 +142,39 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     
     print(f"Total pixels: {flat_pixels.shape[0]}, Valid pixels: {valid_pixels.shape[0]}")
 
-    
-
-   
-    # Vectorized approach for interpolation
+    # Interpolation
     print('Generating monthly samples:')
-    #interpolated_feature = np.apply_along_axis(interpolate_time_series, 2, feature_data, dates_2018, dates_2019)
-    interpolated_valid = Parallel(n_jobs=6)(
-        delayed(interpolate_time_series)(px, dates_2018, dates_2019)
-        for px in tqdm(valid_pixels, desc="Interpolating")
-    )
-    interpolated_valid = np.stack(interpolated_valid).astype(np.float16)
-    #interpolated_feature = parallel_interpolate(feature_data, dates_2018, dates_2019)
 
-    # Create full 3D array with NaNs
-    new_time_steps = interpolated_valid.shape[1]
-    interpolated_full = np.zeros((height * width, 24), dtype=np.float16) 
+    # Define output file path
+    interpolated_feature_path = os.path.join(outpath, "interpolated_feature.npy")
 
-    # Fill valid positions
-    interpolated_full[valid_mask] = interpolated_valid
+    # Check if file exists
+    if os.path.exists(interpolated_feature_path):
+        print(f"Interpolated feature already exists at: {interpolated_feature_path}")
+        interpolated_feature = np.load(interpolated_feature_path)
+    else:
+        # Interpolation process
+        interpolated_valid = Parallel(n_jobs=6)(
+            delayed(interpolate_time_series)(px, dates_2018, dates_2019)
+            for px in tqdm(valid_pixels, desc="Interpolating")
+        )
+        interpolated_valid = np.stack(interpolated_valid).astype(np.float16)
 
-    # Reshape back to 3D image
-    interpolated_feature = interpolated_full.reshape(height, width, new_time_steps)
+        # Create full 3D array with NaNs
+        new_time_steps = interpolated_valid.shape[1]
+        interpolated_full = np.zeros((height * width, 24), dtype=np.float16)
 
-    print(f"Interpolated feature shape: {interpolated_feature.shape}")
-    
+        # Fill valid positions
+        interpolated_full[valid_mask] = interpolated_valid
+
+        # Reshape back to 3D image
+        interpolated_feature = interpolated_full.reshape(height, width, new_time_steps)
+
+        # Save to output
+        np.save(interpolated_feature_path, interpolated_feature)
+        print(f"Saved interpolated feature to: {interpolated_feature_path}")
+
+    print(f"Interpolated feature shape: {interpolated_feature.shape}")  
 
 
     # Reshape for BFAST
@@ -183,55 +191,63 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     nyear = endyear - startyear 
     years_np = np.arange(startyear, endyear+1)
     
-    print(f"Input array shape : {fused_reshaped.shape}")
-    
-    batch_size = int(totpixels/10)  # Try 1M, 2M, etc.
-    num_batches = int(np.ceil(fused_reshaped.shape[0] / batch_size))
-    
-    all_breaks = []
-    all_confidence = []
-    dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(fused_reshaped.shape[1], 1)
+    #Save as numpy array
 
-    for i in range(num_batches):
-        start = i * batch_size
-        end = min((i + 1) * batch_size, fused_reshaped.shape[0])
-        print(f"Processing batch {i+1}/{num_batches} ({end - start} pixels)")
-        
-        batch_data = fused_reshaped[start:end]
-    
-        with Parallel(n_jobs=-1) as parallel:
-            
-            breaks, confidence = run_bfast_parallel(parallel, batch_data, dates, freq)
-            
-        all_breaks.append(breaks)
-        all_confidence.append(confidence)    
-        
-    # Combine all results
-    breaks = np.concatenate(all_breaks, axis=0)
-    confidence = np.concatenate(all_confidence, axis=0) 
-                 
-    # Process results
-    changemaps = breaks // freq
-    accuracymaps = confidence
-    changemaps = changemaps.reshape(height, width)
-    accuracymaps = accuracymaps.reshape(height, width)
-    
-    
-    
-    changemaps_year = np.zeros_like(changemaps, dtype = int)
-    for i, year in enumerate(years_np):
-        changemaps_year[changemaps == i] = year
+    changemaps_path = os.path.join(outpath, "changemaps_year.npy")
+    accuracymaps_path = os.path.join(outpath, "accuracymaps.npy")
 
-        # Process results
-    changemaps = breaks // freq
-    accuracymaps = confidence
-    changemaps = changemaps.reshape(height, width)
-    accuracymaps = accuracymaps.reshape(height, width)
-    
-   
-    changemaps_year = np.zeros_like(changemaps, dtype = int)
-    for i, year in enumerate(years_np):
-        changemaps_year[changemaps == i] = year
+
+    # Check if both files exist
+    if os.path.exists(changemaps_path) and os.path.exists(accuracymaps_path):
+        print("Loading precomputed change maps and accuracy maps.")
+        changemaps_year = np.load(changemaps_path)
+        accuracymaps = np.load(accuracymaps_path)
+
+    else:    
+
+        print(f"Input array shape : {fused_reshaped.shape}")
+        batch_size = int(totpixels/10)  # Try 1M, 2M, etc.
+        num_batches = int(np.ceil(fused_reshaped.shape[0] / batch_size))
+        
+        all_breaks = []
+        all_confidence = []
+        dates = bfast.r_style_interval((startyear, 1), (startyear + nyear, 365), freq).reshape(fused_reshaped.shape[1], 1)
+
+        for i in range(num_batches):
+            start = i * batch_size
+            end = min((i + 1) * batch_size, fused_reshaped.shape[0])
+            print(f"Processing batch {i+1}/{num_batches} ({end - start} pixels)")
+            
+            batch_data = fused_reshaped[start:end]
+        
+            with Parallel(n_jobs=-1) as parallel:
+                
+                breaks, confidence = run_bfast_parallel(parallel, batch_data, dates, freq)
+                
+            all_breaks.append(breaks)
+            all_confidence.append(confidence)    
+            
+        # Combine all results
+        breaks = np.concatenate(all_breaks, axis=0)
+        confidence = np.concatenate(all_confidence, axis=0) 
+
+        # Compute change maps and accuracy maps
+        changemaps = breaks // freq
+        accuracymaps = confidence
+        changemaps = changemaps.reshape(height, width)
+        accuracymaps = accuracymaps.reshape(height, width)
+
+        # Convert index to year
+        changemaps_year = np.zeros_like(changemaps, dtype=int)
+        for i, year in enumerate(years_np):
+            changemaps_year[changemaps == i] = year
+
+
+        # Save results
+        np.save(changemaps_path, changemaps_year)
+        np.save(accuracymaps_path, accuracymaps)
+        print(f"Saved changemaps_year to: {changemaps_path}")
+        print(f"Saved accuracymaps to: {accuracymaps_path}")      
         
     print('Start post processing:')
     # Remove isolated pixels
