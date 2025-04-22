@@ -16,7 +16,8 @@ from tqdm import tqdm
 def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath):
     # Initialize logging and timer
     logging = {} 
-    t_tot = time.time()
+    start_time = time.time()
+    
 
 
 
@@ -267,7 +268,14 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     
     fm.writeGeoTIFFD(output_filename_process, np.stack([final_change_array, final_probability_array], axis=-1), geotransform, projection) 
 
-    print("Processing complete!")    
+    print("Processing complete!") 
+    
+    # End timing
+    end_time = time.time()
+    
+    # Calculate and print time in minutes
+    minutes = (end_time - start_time) / 60
+    print(f"Execution time: {minutes:.2f} minutes")
          
 
 #PREPARE SOME TOOLBOX PARAMETERS
