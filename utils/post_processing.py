@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.ndimage import label, binary_dilation
 import utils.filemanager as fm
-from scipy.ndimage import label
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from joblib import Parallel, delayed
+from tqdm import tqdm
 
 
 #--------------------------------------------------------#
@@ -44,25 +45,31 @@ def remove_isolated_pixels(change_array, probability_array, area_threshold=16):
 
     return change_array, probability_array
 
+def _process_hole(label_id, labeled_holes, filled_change_array, updated_probability_array, max_hole_size, no_change_value):
+    hole_mask = (labeled_holes == label_id)
+    hole_size = np.count_nonzero(hole_mask)
 
+    if hole_size > max_hole_size:
+        return None  # Skip this hole
 
-    
-def fill_small_holes_and_update_probabilities(change_array, probability_array, max_hole_size=16, no_change_value=0):
-    """
-    Fill small holes (nodata values) in the change map and assign probabilities to the filled pixels.
-    Holes larger than `max_hole_size` are ignored. 
+    dilated = binary_dilation(hole_mask)
+    boundary_mask = dilated & (~hole_mask)
 
-    Parameters:
-    - change_array: A 2D numpy array with values representing change (non-zero for changes, zero for no change).
-    - probability_array: A 2D numpy array with probability values (0–1) for changes.
-    - max_hole_size: Maximum size of holes (in pixels) to fill.
-    - no_change_value: Value to represent 'no change' (default is 0).
-    
-    Returns:
-    - filled_change_array: Change array with small nodata values filled based on neighboring values.
-    - updated_probability_array: Probability array with assigned values for filled pixels.
-    """
+    boundary_values = filled_change_array[boundary_mask]
+    boundary_probs = updated_probability_array[boundary_mask]
 
+    valid_mask = boundary_values != no_change_value
+
+    if np.any(valid_mask):
+        mean_change = int(np.mean(boundary_values[valid_mask]))  # Using int(mean) for change
+        mean_prob = np.mean(boundary_probs[valid_mask])
+    else:
+        mean_change = no_change_value
+        mean_prob = 0.0
+
+    return label_id, mean_change, mean_prob
+
+def fill_small_holes_and_update_probabilities(change_array, probability_array, max_hole_size=16, no_change_value=0, max_workers=8):
     change_array = change_array.astype(np.uint8)
     probability_array = probability_array.astype(np.float16)
 
@@ -72,34 +79,28 @@ def fill_small_holes_and_update_probabilities(change_array, probability_array, m
     nodata_mask = (filled_change_array == no_change_value)
     labeled_holes, num_holes = label(nodata_mask)
 
-    for i in range(1, num_holes + 1):
-        hole_mask = labeled_holes == i
-        hole_size = np.sum(hole_mask)
+    futures = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for label_id in range(1, num_holes + 1):
+            futures.append(executor.submit(
+                _process_hole,
+                label_id, labeled_holes,
+                filled_change_array,
+                updated_probability_array,
+                max_hole_size,
+                no_change_value
+            ))
 
-        if hole_size > max_hole_size:
-            continue
-
-        # Dilate hole to find boundary
-        dilated_mask = binary_dilation(hole_mask)
-        boundary_mask = dilated_mask & (~hole_mask)
-
-        # Get valid neighbors on the boundary
-        boundary_changes = filled_change_array[boundary_mask]
-        boundary_probs = updated_probability_array[boundary_mask]
-        valid_neighbors = boundary_changes != no_change_value
-
-        if np.any(valid_neighbors):
-            mean_change = int(np.mean(boundary_changes[valid_neighbors]))
-            mean_prob = np.mean(boundary_probs[valid_neighbors])
-        else:
-            mean_change = no_change_value
-            mean_prob = 0.0
-
-        filled_change_array[hole_mask] = mean_change
-        updated_probability_array[hole_mask] = mean_prob
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Filling holes"):
+            result = future.result()
+            if result is not None:
+                label_id, mean_change, mean_prob = result
+                hole_mask = (labeled_holes == label_id)
+                filled_change_array[hole_mask] = mean_change
+                updated_probability_array[hole_mask] = mean_prob
 
     return filled_change_array.astype(np.uint8), updated_probability_array.astype(np.float16)
-
+    
 
     
     
