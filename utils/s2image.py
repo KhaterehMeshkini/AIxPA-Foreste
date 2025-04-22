@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import filemanager as fm
-from satimage import SATimg
+import utils.filemanager as fm
+from utils.satimage import SATimg
 from scipy.ndimage import binary_dilation as bindilation 
 
 class S2img(SATimg):
