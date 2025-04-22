@@ -1,8 +1,8 @@
 import os
 import numpy as np
 from datetime import datetime
-import filemanager as fm
-import spectralindices as si
+import utils.filemanager as fm
+import utils.spectralindices as si
 
 class SATimg:
     # self._metadata
