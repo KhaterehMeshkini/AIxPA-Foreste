@@ -59,10 +59,10 @@ The following parameters are required to run the script:
 ## Requirements
 
 - conda create --name <my_env_name> python=3.10
-Required Python libraries install via `conda`:
+- Required Python libraries install via `conda`:
 - `scikit-image scikit-learn pandas`
 - `gdal=3.10`
-Required Python libraries install via `pip`:
+- Required Python libraries install via `pip`:
 - `requirements.txt`
 
 - Custom `utils` module (must be included in the repository)
