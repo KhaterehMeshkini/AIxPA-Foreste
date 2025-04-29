@@ -8,6 +8,7 @@ This project implements a pipeline for deforestation using Sentinel-2 Level-2A i
 - **Forest Mask** in `.shp` or raster format.
   - Used to limit analysis to forested areas.
   - Can be downloaded from the [WebGIS Portal](https://webgis.provincia.tn.it/) confine del bosco layer or from https://siatservices.provincia.tn.it/idt/vector/p_TN_3d0874bc-7b9e-4c95-b885-0f7c610b08fa.zip.
+  - The file must be extracted. 
 
 
 
