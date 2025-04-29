@@ -9,6 +9,7 @@ from skimage import transform
 import geopandas as gpd
 from shapely.geometry import Polygon
 from osgeo import gdal, ogr, osr
+import geopandas as gpd
 from rasterio.features import rasterize
 
 
@@ -130,6 +131,47 @@ def array_as_image(array, path, name='image.png', **kwargs):
     img,fig = None,None    
 
 #--------------------------------------------------------#
+
+# GEO-REFERENCED READ/WRITE FUNCTONS
+def writeGeoTIFF(savepath, matr, geotransform, projection, **kwargs):
+    datatype = kwargs.get('dtype',gdal.GDT_Float32)
+    [cols, rows] = matr.shape   
+
+    #PREPARE OUTDATA
+    driver = gdal.GetDriverByName("GTiff")
+    outdata = driver.Create(savepath, rows, cols, 1, datatype)
+    outdata.SetGeoTransform( geotransform )##sets same geotransform as input
+    outdata.SetProjection( projection )##sets same projection as input
+    
+   
+    outdata.GetRasterBand(1).WriteArray(matr)
+    #outdata.GetRasterBand(1).SetNoDataValue(-9999)
+
+    #WRITE DATA
+    outdata.FlushCache() ##saves to disk!!
+    outdata = None  
+
+def writeGeoTIFFD(savepath, matr, geotransform, projection, **kwargs):
+    #datatype = kwargs.get('dtype',gdal.GDT_Int32)
+    datatype = kwargs.get('dtype',gdal.GDT_Float32)
+    nodata = kwargs.get('nodata', None)
+    [cols, rows, band] = matr.shape
+
+    #PREPARE OUTDATA
+    driver = gdal.GetDriverByName("GTiff")
+    outdata = driver.Create(savepath, rows, cols, band, datatype)
+    outdata.SetGeoTransform( geotransform )##sets same geotransform as input
+    outdata.SetProjection( projection )##sets same projection as input
+    
+    for i in range(band):
+        outdata.GetRasterBand(i+1).WriteArray(matr[:,:,i])
+        if nodata is not None:
+            outdata.GetRasterBand(i+1).SetNoDataValue(nodata)
+
+    #WRITE DATA
+    outdata.FlushCache() ##saves to disk!!
+    outdata = None 
+    
 def readGeoTIFF(path, metadata=False):
     """If metadata=False(default) returns array;
     else returns in the following order:
@@ -226,6 +268,9 @@ def write_shapefile(array, transform, crs, output_shapefile):
 
     print(f"Shapefile saved to: {output_shapefile}")
 
+
+
+
 def shapefile_to_array(shapefile_path, ref_transform, ref_proj, ref_height, ref_width, attribute='objectid'):
 
     # Create an in-memory raster
@@ -255,7 +300,10 @@ def shapefile_to_array(shapefile_path, ref_transform, ref_proj, ref_height, ref_
 
     array = target_ds.ReadAsArray()
     return array
-            
+    
+
+
+        
 """
 def readGeoTIFFraster(path):
     with rasterio.open(path) as dataset:
