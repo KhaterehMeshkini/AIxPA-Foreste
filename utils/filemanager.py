@@ -9,7 +9,6 @@ from skimage import transform
 import geopandas as gpd
 from shapely.geometry import Polygon
 from osgeo import gdal, ogr, osr
-import geopandas as gpd
 from rasterio.features import rasterize
 
 
