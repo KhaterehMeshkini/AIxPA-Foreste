@@ -225,7 +225,36 @@ def write_shapefile(array, transform, crs, output_shapefile):
 
     print(f"Shapefile saved to: {output_shapefile}")
 
-        
+def shapefile_to_array(shapefile_path, ref_transform, ref_proj, ref_height, ref_width, attribute='objectid'):
+
+    # Create an in-memory raster
+    mem_drv = gdal.GetDriverByName('MEM')
+    target_ds = mem_drv.Create('', ref_width, ref_height, 1, gdal.GDT_Int32)
+    target_ds.SetGeoTransform(ref_transform)
+    target_ds.SetProjection(ref_proj)
+
+    # Open shapefile using OGR
+    shapefile = ogr.Open(shapefile_path)
+    layer = shapefile.GetLayer()
+
+    # Reproject if necessary
+    source_srs = layer.GetSpatialRef()
+    target_srs = osr.SpatialReference()
+    target_srs.ImportFromWkt(ref_proj)
+    
+    if not source_srs.IsSame(target_srs):
+        coord_trans = osr.CoordinateTransformation(source_srs, target_srs)
+        for feature in layer:
+            geom = feature.GetGeometryRef()
+            geom.Transform(coord_trans)
+        layer.ResetReading()
+
+    # Rasterize using attribute
+    gdal.RasterizeLayer(target_ds, [1], layer, options=[f"ATTRIBUTE={attribute.upper()}"])
+
+    array = target_ds.ReadAsArray()
+    return array
+            
 """
 def readGeoTIFFraster(path):
     with rasterio.open(path) as dataset:
