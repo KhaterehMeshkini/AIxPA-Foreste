@@ -90,7 +90,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
                 
     
                 NDVI = _ndi(b4, b3)
-                BSI = _ndi(b1, b3, b4, b5)
+                BSI = _bsi(b1, b3, b4, b5)
 
                 fuse_feature = fuse_features(NDVI,BSI)
     
