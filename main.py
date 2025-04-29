@@ -95,7 +95,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
                 fuse_feature = fuse_features(NDVI,BSI)
     
                 # Mask for valid values (update if needed)
-                fn = fn[1:]
+                #fn = fn[1:]
                 name = fn[idx]
                 maskpath = fm.joinpath(temppath, name, 'MASK.npy')
                 msk = np.load(maskpath)
