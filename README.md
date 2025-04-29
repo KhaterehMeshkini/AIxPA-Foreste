@@ -62,6 +62,7 @@ The following parameters are required to run the script:
 - Required Python libraries install via `conda`:
 - `scikit-image scikit-learn pandas`
 - `gdal=3.10`
+- `libgdal-jp2openjpeg`
 - Required Python libraries install via `pip`:
 - `requirements.txt`
 
