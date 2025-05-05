@@ -119,14 +119,17 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
         feature_all.flush()
         
 
+    # read years 
+    startyear = int(years[0])
+    endyear = int(years[-1])    
     
     #read the dates
     # Convert the date strings to datetime objects
     all_dates_datetime = [datetime.strptime(date, '%Y%m%d') for date in all_dates]
     
     # Separate dates based on the year
-    dates_2018 = [date for date in all_dates_datetime if date.year == 2018]
-    dates_2019 = [date for date in all_dates_datetime if date.year == 2019]
+    dates_startyear = [date for date in all_dates_datetime if date.year == startyear]
+    dates_endyear = [date for date in all_dates_datetime if date.year == endyear]
     
     
     #feature data
@@ -156,7 +159,7 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     else:
         # Interpolation process
         interpolated_valid = Parallel(n_jobs=6)(
-            delayed(interpolate_time_series)(px, dates_2018, dates_2019)
+            delayed(interpolate_time_series)(px, dates_startyear, dates_endyear)
             for px in tqdm(valid_pixels, desc="Interpolating")
         )
         interpolated_valid = np.stack(interpolated_valid).astype(np.float16)
@@ -186,8 +189,6 @@ def deforestation(sensor, tilename, years, maindir, boscopath, datapath, outpath
     # Run BFAST
     print('Running break point detector:')
 
-    startyear = int(years[0])
-    endyear = int(years[-1]) 
     freq = 12 #monthly data
     nyear = endyear - startyear 
     years_np = np.arange(startyear, endyear+1)
